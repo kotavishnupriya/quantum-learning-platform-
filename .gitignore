@@ -1,0 +1,8 @@
+.venv/
+.venv*/
+venv/
+__pycache__/
+*.pyc
+app_backup*.py
+quantum_cloud_storage/
+.streamlit/secrets.toml
