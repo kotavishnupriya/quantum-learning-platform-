@@ -6,6 +6,8 @@ import os
 import re
 import altair as alt
 import plotly.graph_objects as go
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
 from qiskit import QuantumCircuit, transpile
@@ -381,76 +383,84 @@ def render_bloch_sphere_3d(theta=0.0, phi=0.0):
     theta: polar angle from +Z axis [0 to pi]
     phi: azimuthal angle around Z axis in XY plane [0 to 2*pi]
     """
-    x_vec = float(np.sin(theta) * np.cos(phi))
-    y_vec = float(np.sin(theta) * np.sin(phi))
-    z_vec = float(np.cos(theta))
+    try:
+        x_vec = float(np.sin(theta) * np.cos(phi))
+        y_vec = float(np.sin(theta) * np.sin(phi))
+        z_vec = float(np.cos(theta))
 
-    # Generate sphere wireframe
-    u = np.linspace(0, 2 * np.pi, 30)
-    v = np.linspace(0, np.pi, 20)
-    xs = np.outer(np.cos(u), np.sin(v))
-    ys = np.outer(np.sin(u), np.sin(v))
-    zs = np.outer(np.ones(np.size(u)), np.cos(v))
+        # Generate sphere wireframe
+        u = np.linspace(0, 2 * np.pi, 30)
+        v = np.linspace(0, np.pi, 20)
+        xs = np.outer(np.cos(u), np.sin(v))
+        ys = np.outer(np.sin(u), np.sin(v))
+        zs = np.outer(np.ones(np.size(u)), np.cos(v))
 
-    fig = go.Figure()
+        fig = go.Figure()
 
-    # Transparent sphere shell
-    fig.add_trace(go.Surface(
-        x=xs, y=ys, z=zs,
-        opacity=0.08,
-        colorscale=[[0, '#7c3aed'], [1, '#6366f1']],
-        showscale=False,
-        hoverinfo='skip'
-    ))
-
-    # Equator ring
-    phi_ring = np.linspace(0, 2 * np.pi, 100)
-    fig.add_trace(go.Scatter3d(
-        x=np.cos(phi_ring), y=np.sin(phi_ring), z=np.zeros_like(phi_ring),
-        mode='lines', line=dict(color='#cbd5e1', width=2), hoverinfo='skip'
-    ))
-
-    # 3D Coordinate axes (+X, +Y, +Z)
-    axes_data = [
-        ([-1.2, 1.2], [0, 0], [0, 0], 'X (|+⟩ / |-⟩)'),
-        ([0, 0], [-1.2, 1.2], [0, 0], 'Y (|i+⟩ / |i-⟩)'),
-        ([0, 0], [0, 0], [-1.2, 1.2], 'Z (|0⟩ / |1⟩)')
-    ]
-    for x_pts, y_pts, z_pts, name in axes_data:
-        fig.add_trace(go.Scatter3d(
-            x=x_pts, y=y_pts, z=z_pts, mode='lines+text',
-            line=dict(color='#94a3b8', width=2),
+        # Transparent sphere shell
+        fig.add_trace(go.Surface(
+            x=xs, y=ys, z=zs,
+            opacity=0.08,
+            colorscale=[[0, '#7c3aed'], [1, '#6366f1']],
+            showscale=False,
             hoverinfo='skip'
         ))
 
-    # Statevector Arrow (from origin to surface)
-    fig.add_trace(go.Scatter3d(
-        x=[0, x_vec], y=[0, y_vec], z=[0, z_vec],
-        mode='lines', line=dict(color='#7c3aed', width=7),
-        name='Statevector |ψ⟩'
-    ))
-    
-    # Statevector Tip Marker
-    fig.add_trace(go.Scatter3d(
-        x=[x_vec], y=[y_vec], z=[z_vec],
-        mode='markers+text', marker=dict(size=8, color='#ef4444'),
-        text=['|ψ⟩'], textposition='top center',
-        name='State Tip'
-    ))
+        # Equator ring
+        phi_ring = np.linspace(0, 2 * np.pi, 100)
+        fig.add_trace(go.Scatter3d(
+            x=np.cos(phi_ring), y=np.sin(phi_ring), z=np.zeros_like(phi_ring),
+            mode='lines', line=dict(color='#cbd5e1', width=2), hoverinfo='skip'
+        ))
 
-    fig.update_layout(
-        scene=dict(
-            xaxis=dict(showbackground=False, showgrid=False, zeroline=False, title='X'),
-            yaxis=dict(showbackground=False, showgrid=False, zeroline=False, title='Y'),
-            zaxis=dict(showbackground=False, showgrid=False, zeroline=False, title='Z'),
-            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
-        ),
-        margin=dict(l=0, r=0, b=0, t=20),
-        height=420,
-        showlegend=False
-    )
+        # 3D Coordinate axes (+X, +Y, +Z)
+        axes_data = [
+            ([-1.2, 1.2], [0, 0], [0, 0], 'X (|+⟩ / |-⟩)'),
+            ([0, 0], [-1.2, 1.2], [0, 0], 'Y (|i+⟩ / |i-⟩)'),
+            ([0, 0], [0, 0], [-1.2, 1.2], 'Z (|0⟩ / |1⟩)')
+        ]
+        for x_pts, y_pts, z_pts, name in axes_data:
+            fig.add_trace(go.Scatter3d(
+                x=x_pts, y=y_pts, z=z_pts, mode='lines+text',
+                line=dict(color='#94a3b8', width=2),
+                hoverinfo='skip'
+            ))
 
-    st.plotly_chart(fig, use_container_width=True)
+        # Statevector Arrow (from origin to surface)
+        fig.add_trace(go.Scatter3d(
+            x=[0, x_vec], y=[0, y_vec], z=[0, z_vec],
+            mode='lines', line=dict(color='#7c3aed', width=7),
+            name='Statevector |ψ⟩'
+        ))
+        
+        # Statevector Tip Marker
+        fig.add_trace(go.Scatter3d(
+            x=[x_vec], y=[y_vec], z=[z_vec],
+            mode='markers+text', marker=dict(size=8, color='#ef4444'),
+            text=['|ψ⟩'], textposition='top center',
+            name='State Tip'
+        ))
+
+        fig.update_layout(
+            scene=dict(
+                xaxis=dict(showbackground=False, showgrid=False, zeroline=False, title='X'),
+                yaxis=dict(showbackground=False, showgrid=False, zeroline=False, title='Y'),
+                zaxis=dict(showbackground=False, showgrid=False, zeroline=False, title='Z'),
+                camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
+            ),
+            margin=dict(l=0, r=0, b=0, t=20),
+            height=420,
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+    except Exception as exc:
+        st.markdown(f"""
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center;">
+            <div style="font-weight: 700; color: #7c3aed;">🌐 Bloch Sphere Coordinates</div>
+            <div style="font-size: 0.9rem; color: #334155; margin-top: 4px;">θ = <code>{theta:.3f} rad</code> | φ = <code>{phi:.3f} rad</code></div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -556,7 +566,7 @@ def explain_quantum_circuit(circuit, context_title=None):
 
     is_bb84 = (num_q == 1 and len(ops) >= 2 and ops[-1][0] == 'measure' and any(op[0] == 'h' for op in ops))
     is_bell = (num_q == 2 and len(ops) >= 2 and ops[0][0] == 'h' and ops[0][1] == [0] and ops[1][0] in ['cx', 'cnot'] and ops[1][1] == [0, 1])
-    is_superposition = (num_q == 1 and len(ops) <= 2 and ops[0][0] == 'h' and ops[0][1] == [0])
+    is_superposition = (num_q == 1 and 1 <= len(ops) <= 2 and ops[0][0] == 'h' and ops[0][1] == [0])
     is_teleport = (num_q == 3 and any(op[0] in ['cx', 'cz'] for op in ops))
     is_grover = (num_q == 2 and any(op[0] == 'cz' for op in ops))
     is_qft = any(op[0] in ['cp', 'swap'] for op in ops)
@@ -972,11 +982,14 @@ def circuit_diagram(circuit, show_explanation=True):
     num_q = circuit.num_qubits
     depth = circuit.depth()
 
-    fig = draw_quantum_circuit_visual(circuit)
-    if fig is not None:
-        st.markdown("##### 🎨 Graphical Circuit Diagram")
-        st.pyplot(fig, use_container_width=False)
-        plt.close(fig)
+    try:
+        fig = draw_quantum_circuit_visual(circuit)
+        if fig is not None:
+            st.markdown("##### 🎨 Graphical Circuit Diagram")
+            st.pyplot(fig, use_container_width=False)
+            plt.close(fig)
+    except Exception:
+        plt.close('all')
 
     st.markdown("##### 📄 Monospace Wire Blueprint")
     st.markdown("""<div class="circuit-window">
@@ -1108,10 +1121,13 @@ def render_classical_measurement_output(counts, num_qubits, shots, circuit=None)
 
         if circuit is not None:
             st.markdown(f"##### 🛠️ Circuit Schematic for Observed State |{single_state}⟩:")
-            fig = draw_quantum_circuit_visual(circuit)
-            if fig is not None:
-                st.pyplot(fig, use_container_width=False)
-                plt.close(fig)
+            try:
+                fig = draw_quantum_circuit_visual(circuit)
+                if fig is not None:
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close(fig)
+            except Exception:
+                plt.close('all')
             st.code(str(circuit), language="text")
     else:
         st.write("Each circuit execution (shot) produces a classical measurement result. The table below summarizes all observed measurement results:")
@@ -1151,10 +1167,13 @@ def render_classical_measurement_output(counts, num_qubits, shots, circuit=None)
                         <span class="badge-pill badge-green">{count} shots ({prob_pct:.1f}%)</span>
                     </div>
                     """, unsafe_allow_html=True)
-                    fig = draw_quantum_circuit_visual(circuit)
-                    if fig is not None:
-                        st.pyplot(fig, use_container_width=False)
-                        plt.close(fig)
+                    try:
+                        fig = draw_quantum_circuit_visual(circuit)
+                        if fig is not None:
+                            st.pyplot(fig, use_container_width=False)
+                            plt.close(fig)
+                    except Exception:
+                        plt.close('all')
                     st.code(str(circuit), language="text")
 
     st.markdown("</div>", unsafe_allow_html=True)
